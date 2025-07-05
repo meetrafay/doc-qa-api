@@ -83,7 +83,7 @@ README.md
 ### 1️⃣ Clone the repo
 
 ```bash
-git clone https://github.com/your-username/doc-qa-api.git
+git clone https://github.com/meetrafay/doc-qa-api.git
 cd doc-qa-api
 ```
 
