@@ -1,8 +1,3 @@
-Of course bro! Here’s your full `README.md` in proper **Markdown format** — just copy and paste it directly into your project’s root folder.
-
----
-
-````markdown
 # 🧠 Document-Based Question Answering API (RAG Pipeline)
 
 This project is a lightweight and production-style **question answering system** that lets users:
