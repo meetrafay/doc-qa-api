@@ -166,5 +166,4 @@ POST /query
 
 👨‍💻 Built by **Rafay Khan**
 💼 Backend Python Developer | AI Enthusiast
-🔗 [LinkedIn](https://linkedin.com/in/your-profile)
-🔗 [GitHub](https://github.com/your-username)
+🔗 [LinkedIn](https://www.linkedin.com/in/rafayhere/)
