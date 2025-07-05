@@ -1,8 +1,3 @@
-Of course bro! Here’s your full `README.md` in proper **Markdown format** — just copy and paste it directly into your project’s root folder.
-
----
-
-````markdown
 # 🧠 Document-Based Question Answering API (RAG Pipeline)
 
 This project is a lightweight and production-style **question answering system** that lets users:
@@ -83,7 +78,7 @@ README.md
 ### 1️⃣ Clone the repo
 
 ```bash
-git clone https://github.com/your-username/doc-qa-api.git
+git clone https://github.com/meetrafay/doc-qa-api.git
 cd doc-qa-api
 ```
 
@@ -171,5 +166,4 @@ POST /query
 
 👨‍💻 Built by **Rafay Khan**
 💼 Backend Python Developer | AI Enthusiast
-🔗 [LinkedIn](https://linkedin.com/in/your-profile)
-🔗 [GitHub](https://github.com/your-username)
+🔗 [LinkedIn](https://www.linkedin.com/in/rafayhere/)
