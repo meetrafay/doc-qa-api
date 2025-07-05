@@ -1,86 +1,91 @@
-import faiss
 import os
-import json
-import numpy as np
-
-class FAISSService:
-    def __init__(self, index_path="vectorstore/index.faiss", metadata_path="vectorstore/metadata.json", dim=384):
-        self.index_path = index_path
-        self.metadata_path = metadata_path
-        self.dim = dim
-        self.index = self._load_index()
-        self.metadata = self._load_metadata()
-
-    def _load_index(self):
-        if os.path.exists(self.index_path):
-            return faiss.read_index(self.index_path)
-        return faiss.IndexFlatL2(self.dim)
-
-    def _load_metadata(self):
-        if os.path.exists(self.metadata_path):
-            with open(self.metadata_path, "r") as f:
-                return json.load(f)
-        return []
-
-    def add_embeddings(self, embeddings: list[list[float]], metadatas: list[dict]):
-        ids = list(range(len(self.metadata), len(self.metadata) + len(embeddings)))
-        self.index.add(np.array(embeddings).astype("float32"))
-        for i, meta in zip(ids, metadatas):
-            meta["vector_id"] = i
-            self.metadata.append(meta)
-        self._save()
-
-    def _save(self):
-        os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
-
-        faiss.write_index(self.index, self.index_path)
-        with open(self.metadata_path, "w") as f:
-            json.dump(self.metadata, f)
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
-    def search(self, query_embedding: list[float], top_k: int = 3):
-        import numpy as np
-        query_vector = np.array([query_embedding]).astype("float32")
+from typing import List, Dict
+
+VECTOR_DB_PATH = "app/vector_store/index"
+
+class VectorStoreService:
+    def __init__(self):
+        model_name = "sentence-transformers/all-MiniLM-L6-v2"
+        self.embedding = HuggingFaceEmbeddings(model_name=model_name)
+        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+
+        if os.path.exists(VECTOR_DB_PATH):
+            # self.db = FAISS.load_local(VECTOR_DB_PATH, self.embedding)
+
+            self.db = FAISS.load_local(
+                VECTOR_DB_PATH,
+                self.embedding,
+                allow_dangerous_deserialization=True
+            )
+        else:
+            self.db = None
+
+    def add_document(self, doc_id: str, title: str, content: str):
+        chunks = self.text_splitter.create_documents(
+            [content],
+            metadatas=[{"doc_id": doc_id, "title": title}]
+        )
+        if self.db:
+            self.db.add_documents(chunks)
+        else:
+            self.db = FAISS.from_documents(chunks, self.embedding)
+        self.db.save_local(VECTOR_DB_PATH)
+
+    def search(self, query: str, k: int = 3) -> List[Dict]:
         
-        if self.index.ntotal == 0:
-            return []  # no vectors stored yet
+        if not self.db:
+            return []
 
-        top_k = min(top_k, self.index.ntotal)  # avoid asking for more than available
-        distances, indices = self.index.search(query_vector, top_k)
+        docs = self.db.similarity_search(query, k=k)
 
         results = []
-        for idx in indices[0]:
-            if 0 <= idx < len(self.metadata):
-                results.append(self.metadata[idx])
+        for doc in docs:
+            metadata = doc.metadata
+            results.append({
+                "doc_id": metadata.get("doc_id"),
+                "title": metadata.get("title"),
+                "chunk": doc.page_content,
+            })
         return results
 
-
-    def list_documents(self) -> list[dict]:
-        # Get all unique doc_id-title pairs
-        seen = {}
-        for meta in self.metadata:
-            if meta["doc_id"] not in seen:
-                seen[meta["doc_id"]] = meta["title"]
-        return [{"doc_id": k, "title": v} for k, v in seen.items()]
-
+    def list_documents(self) -> List[Dict]:
+        if not self.db:
+            return []
+        return list({doc.metadata["doc_id"]: doc.metadata for doc in self.db.docstore._dict.values()}.values())
 
     def delete_document(self, doc_id: str):
-        # Filter out chunks belonging to this document
-        kept_meta = [m for m in self.metadata if m["doc_id"] != doc_id]
-        delete_indices = [i for i, m in enumerate(self.metadata) if m["doc_id"] == doc_id]
-
-        if not delete_indices:
+        if not self.db:
             return False
 
-        # Rebuild FAISS index with only kept vectors
-        import numpy as np
-        new_index = faiss.IndexFlatL2(self.dim)
-        vectors = self.index.reconstruct_n(0, self.index.ntotal)
-        new_vectors = np.delete(vectors, delete_indices, axis=0)
-        new_index.add(new_vectors.astype("float32"))
+        # Extract all current documents from the store
+        all_docs = list(self.db.docstore._dict.values())
 
-        # Save updated index and metadata
-        self.index = new_index
-        self.metadata = kept_meta
-        self._save()
+        # Filter out the ones you want to delete
+        remaining_docs = [
+            doc for doc in all_docs if doc.metadata.get("doc_id") != doc_id
+        ]
+
+        if len(remaining_docs) == len(all_docs):
+            # Nothing was deleted — ID not found
+            return False
+
+        if not remaining_docs:
+            # No docs left — delete FAISS folder and reset
+            self.db = None
+            import shutil
+            if os.path.exists(VECTOR_DB_PATH):
+                shutil.rmtree(VECTOR_DB_PATH)
+            return True
+
+        # ✅ Recreate FAISS from scratch with safe alignment
+        self.db = FAISS.from_documents(remaining_docs, self.embedding)
+        self.db.save_local(VECTOR_DB_PATH)
         return True
+
+
+

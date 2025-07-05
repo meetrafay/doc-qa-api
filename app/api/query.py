@@ -1,20 +1,18 @@
 from fastapi import APIRouter
 from app.models.query import QueryRequest
-from app.services.embeding import EmbeddingService
-from app.services.vector_store import FAISSService
+from app.services.vector_store import VectorStoreService
 from app.services.llm import AnswerService
 
 router = APIRouter()
 
-embedding_service = EmbeddingService()
-vector_store = FAISSService()
+vector_store = VectorStoreService()
 answer_service = AnswerService()
 
 @router.post("/query")
 def query_docs(payload: QueryRequest):
-    query_vec = embedding_service.embed([payload.question])[0]
-    top_chunks = vector_store.search(query_vec, top_k=payload.top_k)
-
+    # Use LangChain's internal embedding + search
+    top_chunks = vector_store.search(payload.question, k=payload.top_k)
+    
     if not top_chunks:
         return {
             "question": payload.question,
@@ -22,8 +20,8 @@ def query_docs(payload: QueryRequest):
             "sources": []
         }
 
-    combined_context = "\n".join([c["chunk"] for c in top_chunks])
-    
+    combined_context = "\n".join([chunk["chunk"] for chunk in top_chunks])
+
     if not combined_context.strip():
         return {
             "question": payload.question,
@@ -38,4 +36,3 @@ def query_docs(payload: QueryRequest):
         "answer": answer,
         "sources": top_chunks
     }
-
