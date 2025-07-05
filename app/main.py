@@ -1,7 +1,11 @@
 from fastapi import FastAPI
+from app.api import documents, query
 
-app = FastAPI(title="Document QA API", version="0.1.0")
+app = FastAPI(title="Free Document QA API", version="1.0")
+
+app.include_router(documents.router, prefix="")
+app.include_router(query.router)
 
 @app.get("/")
-def root():
-    return {"message": "Welcome to the Document QA API"}
+def read_root():
+    return {"message": "Welcome to the FREE Document QA API"}
