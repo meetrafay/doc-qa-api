@@ -44,7 +44,7 @@ logs/
 app\vector_store
 *.index
 *.faiss
-*.pickle
+*.pkl
 
 # -------------------------------
 # Data
