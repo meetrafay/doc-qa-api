@@ -25,6 +25,20 @@ class VectorStoreService:
         else:
             self.db = None
 
+    
+    def print_all_documents(self):
+        if not self.db:
+            print("No documents in the vector store.")
+            return
+
+        print("\n📄 Stored Documents in FAISS:\n")
+        for doc_id, doc in self.db.docstore._dict.items():
+            metadata = doc.metadata
+            title = metadata.get("title", "Untitled")
+            chunk_id = metadata.get("chunk_id", "N/A")
+            print(f"→ [{title}] (chunk {chunk_id}):\n{doc.page_content[:300]}...\n")
+
+    
     def add_document(self, doc_id: str, title: str, content: str):
         chunks = self.text_splitter.create_documents(
             [content],
@@ -58,34 +72,28 @@ class VectorStoreService:
             return []
         return list({doc.metadata["doc_id"]: doc.metadata for doc in self.db.docstore._dict.values()}.values())
 
-    def delete_document(self, doc_id: str):
+    def delete_document(self, doc_id: str) -> bool:
         if not self.db:
             return False
 
-        # Extract all current documents from the store
         all_docs = list(self.db.docstore._dict.values())
-
-        # Filter out the ones you want to delete
         remaining_docs = [
             doc for doc in all_docs if doc.metadata.get("doc_id") != doc_id
         ]
 
         if len(remaining_docs) == len(all_docs):
-            # Nothing was deleted — ID not found
-            return False
+            return False  # Nothing deleted
 
         if not remaining_docs:
-            # No docs left — delete FAISS folder and reset
+            # All documents deleted — reset vector store
             self.db = None
             import shutil
             if os.path.exists(VECTOR_DB_PATH):
                 shutil.rmtree(VECTOR_DB_PATH)
             return True
 
-        # ✅ Recreate FAISS from scratch with safe alignment
+        # Rebuild vector DB from scratch
         self.db = FAISS.from_documents(remaining_docs, self.embedding)
         self.db.save_local(VECTOR_DB_PATH)
         return True
-
-
 

@@ -41,7 +41,7 @@ logs/
 # -------------------------------
 # FAISS & Vector DB
 # -------------------------------
-vectorstore/
+app\vector_store
 *.index
 *.faiss
 *.pickle
@@ -63,3 +63,4 @@ data/sample_docs/*
 # -------------------------------
 *.bak
 *.tmp
+
