@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, HTTPException
 from app.models.document import DocumentList
 from app.services.vector_store import VectorStoreService
@@ -11,13 +12,13 @@ def upload_documents(doc_list: DocumentList):
         if not doc.content.strip():
             raise HTTPException(status_code=400, detail=f"Document {doc.id} has empty content.")
         
-        existing_docs = vector_store.list_documents()
-        if any(d.get("doc_id") == doc.id for d in existing_docs):
+        doc_id = str(uuid.uuid4())
+        if any(d["doc_id"] == doc_id for d in vector_store.list_documents()):
             raise HTTPException(status_code=409, detail=f"Document with ID '{doc.id}' already exists.")
 
         # LangChain handles chunking + embedding internally
         try:
-            vector_store.add_document(doc_id=doc.id, title=doc.title, content=doc.content)
+            vector_store.add_document(doc_id=doc_id, title=doc.title, content=doc.content)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to index document: {str(e)}")
     
