@@ -127,3 +127,103 @@ python ui.py
 * Ask a question
 * List all documents
 * Delete by `doc_id`
+
+## 🧪 How to Test Each Feature
+
+Use [Swagger UI](http://localhost:8000/docs) or Postman to test the following API endpoints after running the app:
+
+### 📤 1. Upload Document (JSON)
+
+**Endpoint:** `POST /documents`
+**Body Example (`application/json`):**
+
+```json
+{
+  "documents": [
+    {
+      "title": "AI in Healthcare",
+      "content": "Artificial Intelligence is revolutionizing medical diagnostics and treatment..."
+    }
+  ]
+}
+```
+
+✅ **Expected Result:**
+`"Documents indexed successfully"`
+
+---
+
+### 📄 2. Upload PDF Documents (Multiple)
+
+**Endpoint:** `POST /documents/pdf-batch`
+Use Swagger or Postman to **select and upload multiple `.pdf` files**.
+
+✅ **Expected Result:**
+A list of successfully indexed PDF documents with titles and auto-generated UUIDs.
+
+---
+
+### 📜 3. List All Documents
+
+**Endpoint:** `GET /documents`
+
+✅ **Expected Result:**
+
+```json
+[
+  {
+    "doc_id": "uuid-1234",
+    "title": "AI in Healthcare"
+  },
+  {
+    "doc_id": "uuid-5678",
+    "title": "Resume Abdul Rafay"
+  }
+]
+```
+
+---
+
+### ❌ 4. Delete a Document by ID
+
+**Endpoint:** `DELETE /documents/{doc_id}`
+Replace `{doc_id}` with an actual document ID from the list in Step 3.
+
+✅ **Expected Result:**
+
+```json
+{
+  "message": "Document {doc_id} deleted successfully"
+}
+```
+
+---
+
+### 🔍 6. Ask a Question
+
+**Endpoint:** `POST /query`
+**Body Example:**
+
+```json
+{
+  "question": "How is AI used in medical diagnosis?",
+  "top_k": 3
+}
+```
+
+✅ **Expected Result:**
+
+```json
+{
+  "question": "How is AI used in medical diagnosis?",
+  "answer": "AI helps analyze imaging data to detect diseases...",
+  "sources": [
+    {
+      "doc_id": "uuid-xyz",
+      "title": "AI in Healthcare",
+      "chunk": "...",
+      "chunk_id": 2
+    }
+  ]
+}
+```
