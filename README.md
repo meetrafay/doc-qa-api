@@ -26,7 +26,7 @@ This project is an AI-powered question answering API that indexes text and PDF d
 │   ├── services/           # Embedding, LLM, and vector logic
 │   ├── utils/              # Text chunking and parsing
 │   └── main.py             # FastAPI app entrypoint
-    ├── ui.py                   # Gradio UI
+├── ui.py                   # Gradio UI
 ├── requirements.txt        # Python dependencies
 ├── README.md               # Project documentation
 └── .gitignore              # Ignore vector DB and envs
