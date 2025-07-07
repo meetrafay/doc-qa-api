@@ -6,5 +6,5 @@ class Document(BaseModel):
     title: str = Field(..., max_length=200)
     content: str = Field(..., min_length=10, max_length=5000)
 
-class DocumentList(BaseModel):
-    documents: List[Document]
+# class DocumentList(BaseModel):
+#     documents: List[Document]
